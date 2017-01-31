@@ -39,6 +39,7 @@ func serve(response http.ResponseWriter, request *http.Request) {
 	u, err := url.Parse(target) // Parse the raw URL value we were given into somthing we can work with
 	if err != nil {
 		http.Error(response, err.Error(), 400)
+		return
 	}
 
 	if !u.IsAbs() { // Is our URL absolute or not?
@@ -50,17 +51,27 @@ func serve(response http.ResponseWriter, request *http.Request) {
 	}
 	targetFormatted := u.String() // Turn our type URL back into a nice easy string, and store it in a variable
 	fetchedResponse, err := http.Get(targetFormatted)
+	if err != nil {
+		http.Error(response, err.Error(), 400)
+		return
+	}
 	fetchedBody, err := ioutil.ReadAll(fetchedResponse.Body) // Read the response into another variable
+	if err != nil {
+		http.Error(response, err.Error(), 400)
+		return
+	}
 	detectedContentType := http.DetectContentType(fetchedBody)
 	parsedContentType, err := parseContentType(detectedContentType)
 	if err != nil {
 		http.Error(response, err.Error(), 500)
+		return
 	}
 	if parsedContentType.Type == "image" {
 		if parsedContentType.Subtype == "jpeg" || parsedContentType.Subtype == "png" {
 			serialized, err := serializeImage(strings.NewReader(string(fetchedBody)))
 			if err != nil {
 				http.Error(response, err.Error(), 500)
+				return
 			}
 			fmt.Fprint(response, serialized)
 		}
