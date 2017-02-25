@@ -45,7 +45,7 @@ func serve(response http.ResponseWriter, request *http.Request) {
 	if !u.IsAbs() { // Is our URL absolute or not?
 		u.Scheme = "http"
 	} else { // If our URL is absolute, make sure the protocol is http(s)
-		if u.Scheme != "http" || u.Scheme != "https" {
+		if strings.HasPrefix(u.Scheme, "http") {
 			u.Scheme = "http"
 		}
 	}
