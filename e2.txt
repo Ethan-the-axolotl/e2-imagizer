@@ -1,0 +1,84 @@
+@name Pietroglyph's Image Loader
+@inputs Screen:wirelink
+@outputs
+@persist Segment:number Target:string Id:number XMax:number YMax:number
+@trigger 
+
+# BSD 3-Clause License
+
+# Copyright (c) 2017, Declan Freeman-Gleason (Pietroglyph)
+# All rights reserved.
+
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are met:
+
+# * Redistributions of source code must retain the above copyright notice, this
+#   list of conditions and the following disclaimer.
+
+# * Redistributions in binary form must reproduce the above copyright notice,
+#   this list of conditions and the following disclaimer in the documentation
+#   and/or other materials provided with the distribution.
+
+# * Neither the name of the copyright holder nor the names of its
+#   contributors may be used to endorse or promote products derived from
+#   this software without specific prior written permission.
+
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+# DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
+# FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+# DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+# SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+# CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+
+runOnHTTP(1)
+runOnChat(1)
+
+Screen:writeCell(1048569,1) # Set the color mode to 1
+
+if (first() & httpCanRequest()) {
+    Segment = 0
+    XMax = 128
+    YMax = XMax
+    Target = "https://golang.org/doc/gopher/frontpage.png"
+    httpRequest("http://vps.nalcad.tk:8000/?target="+Target+"&id="+Id+"&segment="+Segment)
+    Screen:writeCell(1048569,1) # Set the color mode to 1
+}
+
+if (clk("req")) {
+    httpRequest("http://vps.nalcad.tk:8000/?target="+Target+"&id="+Id+"&segment="+Segment)
+}
+
+if (httpClk()) {
+    print(Segment)
+    UnparsedData = httpData()
+    ParsedData = UnparsedData:explode(",")
+    for (I=0,(XMax-1)*3,3) {
+        if (ParsedData[I-2,string] == "[n]") {
+            break
+        }
+        Screen:writeCell(1048575,1) # Turn CLK to 1
+        Screen:writeCell((I/3)+Segment*XMax,ParsedData[I,string]:toNumber()) # Write the red component to the correct cell
+        Screen:writeCell(((I/3)+1)+Segment*XMax,ParsedData[I+1,string]:toNumber()) # Write the green component to the correct cell
+        Screen:writeCell(((I/3)+2)+Segment*XMax,ParsedData[I+2,string]:toNumber()) # Write the blue component to the correct cell
+    }
+    Segment++
+    if (Segment <= YMax-1 & httpCanRequest()) {
+        httpRequest("http://vps.nalcad.tk:8000/?target="+Target+"&id="+Id+"&segment="+Segment)
+    } elseif (Segment <= YMax-1 & !httpCanRequest()) {
+        timer("req",3000)
+    } else {
+        print("Finished parsing and outputting image.")
+    }
+}
+
+if (chatClk(owner())) {
+    Chat = owner():lastSaid():explode(" ")
+    if (Chat:string(1) == "~") {
+        hideChat(1)
+        Target = Chat:string(2)
+        Segment = 0
+        httpRequest("http://vps.nalcad.tk:8000/?target="+Target+"&id="+Id+"&segment="+Segment)
+    }
+} 
