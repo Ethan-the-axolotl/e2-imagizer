@@ -129,43 +129,11 @@ func serve(response http.ResponseWriter, request *http.Request) {
 		}
 		offset := requests[id].img.PixOffset(i, int(segment))
 		values := [3]int{int(requests[id].img.Pix[offset]), int(requests[id].img.Pix[offset+1]), int(requests[id].img.Pix[offset+2])}
-		output += strconv.Itoa(values[0]) + "," + strconv.Itoa(values[1]) + "," + strconv.Itoa(values[2]) + " "
+		output += strconv.Itoa(values[0]) + "," + strconv.Itoa(values[1]) + "," + strconv.Itoa(values[2]) + ","
 	}
 	output += "[n]"
 	fmt.Fprint(response, output)
 }
-
-// detectedContentType := http.DetectContentType(fetchedBody)
-// parsedContentType, err := parseContentType(detectedContentType)
-// if err != nil {
-// 	http.Error(response, err.Error(), 500)
-// 	return
-// }
-
-// if parsedContentType.Type == "image" {
-// 	if parsedContentType.Subtype == "jpeg" || parsedContentType.Subtype == "png" {
-// 		serialized, err := serializeImage(strings.NewReader(string(fetchedBody)))
-// 		if err != nil {
-// 			http.Error(response, err.Error(), 500)
-// 			return
-// 		}
-// 		fmt.Fprint(response, serialized)
-// 	}
-// }
-
-// func serializeImage(req request, reader io.Reader) (string, error) {
-// 	var output string
-
-// 	output += strconv.Itoa(rect.Max.X) + " " + strconv.Itoa(rect.Max.Y) + "|"
-// 	for e := 0; e <= rect.Max.Y-1; e++ {
-// 		for i := 0; i <= rect.Max.X-1; i++ {
-// 			offset := rgba.PixOffset(i, e)
-// 			values := [3]int{int(rgba.Pix[offset]), int(rgba.Pix[offset+1]), int(rgba.Pix[offset+2])}
-// 			output += strconv.Itoa(values[0]) + "," + strconv.Itoa(values[1]) + "," + strconv.Itoa(values[2]) + " "
-// 		}
-// 	}
-// 	return output, nil
-// }
 
 type contentType struct { // The contentType type holds easily usable information that is normally held as a string for indentifying MIME type and character encoding along with other information
 	Type       string            // The first part of the MIME type (eg. "text")
