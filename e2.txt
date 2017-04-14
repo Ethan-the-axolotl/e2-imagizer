@@ -35,7 +35,7 @@
 runOnHTTP(1)
 runOnChat(1)
 
-Screen:writeCell(1048569,1) # Set the color mode to 1
+Screen:writeCell(1048569,2) # Set the color mode to 2
 
 if (first() & httpCanRequest()) {
     Segment = 0
@@ -43,7 +43,8 @@ if (first() & httpCanRequest()) {
     YMax = XMax
     Target = "https://golang.org/doc/gopher/frontpage.png"
     httpRequest("http://vps.nalcad.tk:8000/?target="+Target+"&id="+Id+"&segment="+Segment)
-    Screen:writeCell(1048569,1) # Set the color mode to 1
+    Screen:writeCell(1048574,1) # Hardware clear the screen
+    Screen:writeCell(1048569,2) # Set the color mode to 2
 }
 
 if (clk("req")) {
@@ -59,9 +60,8 @@ if (httpClk()) {
             break
         }
         Screen:writeCell(1048575,1) # Turn CLK to 1
-        Screen:writeCell((I/3)+Segment*XMax,ParsedData[I,string]:toNumber()) # Write the red component to the correct cell
-        Screen:writeCell(((I/3)+1)+Segment*XMax,ParsedData[I+1,string]:toNumber()) # Write the green component to the correct cell
-        Screen:writeCell(((I/3)+2)+Segment*XMax,ParsedData[I+2,string]:toNumber()) # Write the blue component to the correct cell
+        Color = rgb2digi(ParsedData[I-2,string]:toNumber(), ParsedData[I-1,string]:toNumber(), ParsedData[I,string]:toNumber(), 2)
+        Screen:writeCell((I/3)+Segment*XMax,Color) # Write the color to the correct cell
     }
     Segment++
     if (Segment <= YMax-1 & httpCanRequest()) {
@@ -80,5 +80,6 @@ if (chatClk(owner())) {
         Target = Chat:string(2)
         Segment = 0
         httpRequest("http://vps.nalcad.tk:8000/?target="+Target+"&id="+Id+"&segment="+Segment)
+        Screen:writeCell(1048574,1) # Hardware clear the screen
     }
 } 
