@@ -13,11 +13,16 @@ import (
 	"net/url"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/nfnt/resize"
 )
 
 func initalize(response http.ResponseWriter, request *http.Request) {
+	if len(cache.table) >= hardCacheLimit {
+		http.Error(response, "Hard cache limit of "+strconv.Itoa(hardCacheLimit)+" hit, please try again later or raise the cache limit.", 500)
+	}
+
 	target := request.URL.Query().Get("target")
 	u, err := url.Parse(target) // Parse the raw URL value we were given into somthing we can work with
 	if err != nil {
@@ -74,14 +79,14 @@ func initalize(response http.ResponseWriter, request *http.Request) {
 	checksum := crc64.Checksum(fetchedBody, crc64.MakeTable(crc64.ECMA)) // Weakly hash the image so that we have something to address it with
 
 	// Check for a cache hit
-	requests.mux.RLock()
-	if _, exists := requests.table[checksum]; exists {
+	cache.mux.RLock()
+	if _, exists := cache.table[checksum]; exists {
 		// Cache hit! Return what all the relavant information
-		requests.mux.RUnlock()
+		cache.mux.RUnlock()
 		fmt.Fprint(response, "OK@"+strconv.Itoa(int(checksum))+"@HIT") // e2 doesn't give you access to HTTP status codes (which is silly), so we have to do this
 		return
 	}
-	requests.mux.RUnlock()
+	cache.mux.RUnlock()
 
 	// Decode the data into an image
 	img, _, err := image.Decode(strings.NewReader(string(fetchedBody)))
@@ -97,9 +102,11 @@ func initalize(response http.ResponseWriter, request *http.Request) {
 	draw.Draw(rgba, rect, resizedImage, rect.Min, draw.Src)                                        // Draw the resize image onto the rgba image
 
 	// Populate the cache
-	requests.mux.Lock()
-	requests.table[checksum] = *rgba
-	requests.mux.Unlock()
+	cache.mux.Lock()
+	tmp := cache.table[checksum]
+	tmp.image = *rgba
+	tmp.lastAccess = time.Now() // This is for cache-clearing purposes
+	cache.mux.Unlock()
 
 	fmt.Fprint(response, "OK@"+strconv.Itoa(int(checksum))) // e2 doesn't give you access to HTTP status codes (which is silly), so we have to do this
 	return
