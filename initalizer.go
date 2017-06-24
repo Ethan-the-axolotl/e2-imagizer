@@ -106,6 +106,7 @@ func initalize(response http.ResponseWriter, request *http.Request) {
 	tmp := cache.table[checksum]
 	tmp.image = *rgba
 	tmp.lastAccess = time.Now() // This is for cache-clearing purposes
+	cache.table[checksum] = tmp
 	cache.mux.Unlock()
 
 	fmt.Fprint(response, "OK@"+strconv.Itoa(int(checksum))) // e2 doesn't give you access to HTTP status codes (which is silly), so we have to do this
