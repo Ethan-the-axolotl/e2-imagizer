@@ -98,7 +98,7 @@ func initalize(response http.ResponseWriter, request *http.Request) {
 	cache.mux.Lock()
 	for k := range cache.table {
 		// Prune things older than an hour
-		if time.Now().Sub(cache.table[k].lastAccess) >= time.Second {
+		if time.Now().Sub(cache.table[k].lastAccess) >= time.Hour {
 			delete(cache.table, k)
 		}
 	}
