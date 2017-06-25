@@ -19,30 +19,36 @@ import (
 )
 
 func initalize(response http.ResponseWriter, request *http.Request) {
+	var err error
+
 	if len(cache.table) >= hardCacheLimit {
 		http.Error(response, "Hard cache limit of "+strconv.Itoa(hardCacheLimit)+" hit, please try again later or raise the cache limit.", 500)
 	}
 
-	target := request.URL.Query().Get("target")
-	u, err := url.Parse(target) // Parse the raw URL value we were given into somthing we can work with
+	urlTargetString := request.URL.Query().Get("target")
+	if urlTargetString == "" {
+		http.Error(response, "target parameter cannot be empty.", 400)
+	}
+
+	urlTarget, err := url.Parse(urlTargetString) // Parse the raw URL value we were given into somthing we can work with
 	if err != nil {
 		http.Error(response, err.Error(), 400)
 		return
 	}
 
 	// Is our URL absolute or not?
-	if !u.IsAbs() {
+	if !urlTarget.IsAbs() {
 		// The user probably forgot the URL scheme (http, ftp, etc..), we'll try guessing http (we want this to work)
-		u.Scheme = "http"
+		urlTarget.Scheme = "http"
 	}
 
 	// If the URL doesn't have a scheme of http(s), make it that way
-	if !strings.HasPrefix(u.Scheme, "http") {
-		u.Scheme = "http" // This is just a guess, we're hoping that the user just made a typo
+	if !strings.HasPrefix(urlTarget.Scheme, "http") {
+		urlTarget.Scheme = "http" // This is just a guess, we're hoping that the user just made a typo
 	}
 
 	// Make a HTTP request for our URL
-	fetchedResponse, err := http.Get(u.String())
+	fetchedResponse, err := http.Get(urlTarget.String())
 	if err != nil {
 		http.Error(response, err.Error(), 400)
 		return
@@ -83,10 +89,20 @@ func initalize(response http.ResponseWriter, request *http.Request) {
 	if _, exists := cache.table[checksum]; exists {
 		// Cache hit! Return what all the relavant information
 		cache.mux.RUnlock()
-		fmt.Fprint(response, "OK@"+strconv.Itoa(int(checksum))+"@HIT") // e2 doesn't give you access to HTTP status codes (which is silly), so we have to do this
+		fmt.Fprint(response, "OK@"+strconv.FormatUint(checksum, 10)+"@HIT") // e2 doesn't give you access to HTTP status codes (which is silly), so we have to do this
 		return
 	}
 	cache.mux.RUnlock()
+
+	// Try to prune the cache
+	cache.mux.Lock()
+	for k := range cache.table {
+		// Prune things older than an hour
+		if time.Now().Sub(cache.table[k].lastAccess) >= time.Second {
+			delete(cache.table, k)
+		}
+	}
+	cache.mux.Unlock()
 
 	// Decode the data into an image
 	img, _, err := image.Decode(strings.NewReader(string(fetchedBody)))

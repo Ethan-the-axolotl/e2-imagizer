@@ -14,6 +14,11 @@ func serialize(response http.ResponseWriter, request *http.Request) {
 	chunkPowerString := request.URL.Query().Get("chunkpwr")
 	chunkSegmentString := request.URL.Query().Get("segment")
 
+	if hashString == "" || chunkPowerString == "" || chunkSegmentString == "" {
+		http.Error(response, "hash, chunkpwr, and segment parameters cannot be empty.", 400)
+		return
+	}
+
 	hash, err := strconv.ParseUint(hashString, 10, 64) // The hash number is a uint64 (base 10)
 	if err != nil {
 		http.Error(response, err.Error(), 400)
