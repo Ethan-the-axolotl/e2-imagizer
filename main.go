@@ -7,6 +7,7 @@ import (
 	_ "image/jpeg"
 	_ "image/png"
 	"log"
+	"math"
 	"net/http"
 	"sync"
 	"time"
@@ -38,7 +39,7 @@ func main() {
 	flag.IntVar(&sizeMaxPower, "maxpower", 11, "a number that represents the maximum image size without downsampling as a power of 2 (2^x, this overrides the downsample query parameter)") // 1024 by defualt
 	flag.Parse()
 
-	imageSizeMax = 2 ^ sizeMaxPower
+	imageSizeMax = int(math.Pow(2, math.Abs(float64(sizeMaxPower)))) // We use math.Abs to make sure that no rounding is going on
 
 	cache.table = make(map[uint64]imageIndex)
 
