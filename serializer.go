@@ -84,11 +84,11 @@ func serialize(response http.ResponseWriter, request *http.Request) {
 
 	// Loop through all the pixels and serialize them
 	for i := 0; i <= pixelsInChunk; i++ {
-		if x >= segmentXMax || x >= table.image.Bounds().Max.X { // Keep ourselves within the X bounds of the chunkSegment *and* the image
+		if x > segmentXMax || x > table.image.Bounds().Max.X { // Keep ourselves within the X bounds of the chunkSegment *and* the image
 			fmt.Fprint(response, "nnnnnnnnn")                                              // End of X line
 			x = int(chunkSegment*chunkDimensions) - int(chunkDimensions*int64(chunksOver)) // Move X to origin
 			y++
-		} else if y >= segmentYMax || y >= table.image.Bounds().Max.Y { // Keep ourselves within the Y bounds of the chunkSegment *and* the image
+		} else if y > segmentYMax || y > table.image.Bounds().Max.Y { // Keep ourselves within the Y bounds of the chunkSegment *and* the image
 			break
 		} else {
 			var curColor color.RGBA
