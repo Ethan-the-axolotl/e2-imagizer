@@ -2,7 +2,7 @@
 @inputs Screen:wirelink Before:number
 @outputs After:number
 @persist Segment:number Target:string Id:number ChunkXMax:number ChunkYMax:number ChunkPwr:number Hash:string I:number X:number Y:number
-@persist Mode:number
+@persist Mode:number DPReset:number
 @trigger 
 
 # BSD 3-Clause License
@@ -39,6 +39,17 @@ runOnChat(1)
 Screen:writeCell(1048569,3) # Set the color mode to 3
 
 if (first()) {
+    After = -1
+    Mode = 3 # Do nothing/donezo mode
+    ChunkPwr = 9
+    ChunkXMax = 2^ChunkPwr
+    ChunkYMax = ChunkXMax
+    Screen:writeCell(1048574,1) # Hardware clear the screen
+    Screen:writeCell(1048569,3) # Set the color mode to 3
+}
+
+if (DPReset != 69 && duped()) {
+    DPReset = 69
     After = -1
     Mode = 3 # Do nothing/donezo mode
     ChunkPwr = 9
@@ -112,22 +123,31 @@ if (httpClk()) {
         X = 0
         Y = 0
         I = 1
-        while(perf()) {
-            Sub = httpData():sub(I,I+8)
-            if (Sub=="nnnnnnnnn") {
-                Y++
-                X = 0
-            } elseif (Sub=="eeeeeeeee") {
-                print("Done at "+I+" out of "+ChunkXMax^2)
-                Mode = 3 # Finished mode
-                break
-            } else {
-                Screen:writeCell(1048575,1) # Set clk to 1
-                Screen:writeCell(X+Y*512,Sub:toNumber()) # Draw the colors
-                X++
-            }
-            I += 9
+    while(perf()) {
+        if (owner():lastSaid() == "!") { # Cancel command
+            hideChat(1)
+            Mode = 3
+            break
         }
+        Sub = httpData():sub(I,I+8)
+        if (Sub=="nnnnnnnnn") {
+            Y++
+            X = 0
+        } elseif (Sub=="eeeeeeeee") {
+            print("Done at "+I+" out of "+ChunkXMax^2)
+            Mode = 3 # Finished mode
+            After = Segment+1 # Tell the next E2 that we're done
+            break
+        } else {
+            Screen:writeCell(1048575,1) # Set clk to 1
+            Screen:writeCell(X+Y*512,Sub:toNumber()) # Draw the colors
+            X++
+        }
+        I += 9
+    }
+    if (Mode != 3) {
+        timer("ctn",1)
+    }
         if (Mode != 3) {
             timer("ctn",1)
         }
